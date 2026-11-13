@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ee4d2d">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Simulador PDA | Processamento</title>
+<style>
+:root{--orange:#ee4d2d;--dark:#252525;--muted:#737373;--bg:#f4f5f7;--green:#16864a;--red:#c62828;--amber:#a96300}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--dark)}
+header{background:var(--orange);color:white;padding:16px 18px;padding-top:calc(16px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between}
+header strong{font-size:18px}header small{display:block;opacity:.9;margin-top:3px}
+main{max-width:560px;margin:0 auto;padding:16px 14px 32px}
+.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0000000b}
+h1{font-size:22px;margin:4px 0 8px}h2{font-size:17px;margin:0 0 12px}
+p{line-height:1.45;color:#555}label{display:block;font-size:13px;font-weight:bold;margin:12px 0 6px}
+input,select,button{font:inherit}input,select{width:100%;padding:13px;border:1px solid #d5d5d5;border-radius:9px;background:white}
+button{border:0;border-radius:10px;padding:13px 16px;font-weight:bold;cursor:pointer}
+.primary{background:var(--orange);color:white;width:100%}.secondary{background:#f1f1f1;color:#222}.outline{background:white;border:1px solid #ddd;color:#333}
+button:disabled{opacity:.45;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.module{border:1px solid #e4e4e4;border-radius:12px;padding:16px;background:white;text-align:left;min-height:86px}
+.module.active{border:2px solid var(--orange);background:#fff5f2}
+.module b{display:block;margin-bottom:6px}.muted{color:var(--muted);font-size:13px}
+.status{padding:14px;border-radius:10px;margin:12px 0;font-weight:bold;line-height:1.4}
+.success{background:#e6f5eb;color:#126b39}.error{background:#fdeaea;color:#a51e1e}.warning{background:#fff2d9;color:#805000}.info{background:#edf3ff;color:#244b91}
+.scanbox{border:2px dashed #ccc;border-radius:12px;padding:12px;text-align:center}
+#reader{width:100%;overflow:hidden;border-radius:10px}#reader video{border-radius:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#f5f5f5;border-radius:10px;padding:12px}.stat strong{font-size:25px;display:block}.stat span{font-size:12px;color:#666}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.hidden{display:none!important}.dest{font-size:25px;font-weight:bold;color:var(--orange)}
+footer{text-align:center;color:#888;font-size:11px;padding:18px}
+#confirmBtn{width:100%}
+hr{border:0;border-top:1px solid #eee;margin:14px 0}
+</style>
+</head>
+<body>
+<header><div><strong>SHOPP<span style="font-weight:400">E</span> | SIMULADOR PDA</strong><small>Treinamento • Processamento</small></div><span aria-hidden="true">▣</span></header>
+<main>
+<section id="screenName" class="card">
+  <h1>Bem-vindo(a) ao treinamento</h1><p>Informe seu nome para iniciar a simulação.</p>
+  <label for="operator">Nome do colaborador</label><input id="operator" autocomplete="name" placeholder="Digite seu nome">
+  <button class="primary" id="startBtn" style="margin-top:14px">Continuar</button>
+</section>
+
+<section id="screenArea" class="card hidden">
+  <h1>Selecione a área</h1><p>Escolha a atividade que deseja simular.</p>
+  <button class="module active" id="processingBtn"><b>Processamento</b><span class="muted">Simulação de expedição e bipagem por destino</span></button>
+</section>
+
+<section id="screenMenu" class="card hidden">
+  <h1>Menu principal</h1><p>Selecione o módulo para iniciar.</p>
+  <div class="grid">
+    <button class="module"><b>Gerenciamento de Docas</b><span class="muted">Indisponível</span></button>
+    <button class="module"><b>Lista da Fila</b><span class="muted">Indisponível</span></button>
+    <button class="module"><b>Atribuição da workstation</b><span class="muted">Indisponível</span></button>
+    <button class="module"><b>Linehaul</b><span class="muted">Indisponível</span></button>
+    <button class="module"><b>Recebimento</b><span class="muted">Indisponível</span></button>
+    <button class="module active" id="expeditionBtn"><b>Expedição ✓</b><span class="muted">Disponível para treinamento</span></button>
+    <button class="module"><b>Assisted Sorting</b><span class="muted">Indisponível</span></button>
+    <button class="module"><b>Montar Gaiola</b><span class="muted">Indisponível</span></button>
+  </div>
+</section>
+
+<section id="screenTO" class="card hidden">
+  <h1>Expedição</h1><p>Escaneie o QR Code da TO para identificar o destino.</p>
+  <button class="primary" id="scanTOBtn">Escanear TO</button>
+  <div id="toScannerWrap" class="scanbox hidden" style="margin-top:14px">
+    <div id="readerTO"></div><button class="secondary" id="stopTOBtn" style="margin-top:10px">Fechar câmera</button>
+  </div>
+  <label for="manualTO">Ou digite o código da TO (modo de teste)</label>
+  <div class="row"><input id="manualTO" placeholder="Ex.: TO12345"><button class="secondary" id="manualTOBtn">Ler</button></div>
+  <p class="muted">A câmera precisa de permissão e o app deve estar aberto por HTTPS.</p>
+</section>
+
+<section id="screenScan" class="card hidden">
+  <div class="muted">COLABORADOR: <b id="operatorLabel"></b></div>
+  <h1>Leitura de pacotes</h1>
+  <div class="muted">TO selecionada</div><div class="dest" id="currentDestination">—</div>
+  <div class="status info">Comece a bipar os pacotes desse destino.</div>
+  <div class="stats">
+    <div class="stat"><strong id="correctCount">0</strong><span>Corretos</span></div>
+    <div class="stat"><strong id="treatCount">0</strong><span>Tratativas</span></div>
+    <div class="stat"><strong id="duplicateCount">0</strong><span>Duplicados</span></div>
+    <div class="stat"><strong id="errorCount">0</strong><span>Erros</span></div>
+  </div>
+  <div class="scanbox" style="margin-top:14px">
+    <div id="readerPKG"></div>
+    <button class="primary" id="scanPackageBtn" style="margin-top:10px">Abrir câmera para bipar pacote</button>
+    <button class="secondary hidden" id="stopPKGBtn" style="margin-top:8px">Fechar câmera</button>
+  </div>
+  <label for="manualPackage">Digitar código para teste</label>
+  <div class="row"><input id="manualPackage" placeholder="Ex.: PKG0001"><button class="secondary" id="manualPackageBtn">Bipar</button></div>
+  <div id="feedback" aria-live="polite"></div>
+  <button class="outline" id="finishBtn" style="width:100%;margin-top:12px">Finalizar atividade</button>
+</section>
+
+<section id="screenSummary" class="card hidden">
+  <h1>Atividade finalizada</h1><p id="summaryOperator"></p>
+  <div class="stats">
+    <div class="stat"><strong id="sumCorrect">0</strong><span>Pacotes corretos</span></div>
+    <div class="stat"><strong id="sumTreat">0</strong><span>Tratativas</span></div>
+    <div class="stat"><strong id="sumDuplicate">0</strong><span>Duplicados</span></div>
+    <div class="stat"><strong id="sumErrors">0</strong><span>Erros</span></div>
+  </div>
+  <div class="card" style="box-shadow:none;background:#fff5f2;margin-top:12px">
+    <div class="muted">PRODUTIVIDADE</div><div class="dest" id="sumRate">0 pacotes/h</div>
+    <div class="muted" id="sumDuration">Tempo: 0 min</div>
+  </div>
+  <button class="primary" id="newTOBtn">Iniciar outra TO</button>
+  <button class="secondary" id="restartBtn" style="width:100%;margin-top:8px">Voltar ao início</button>
+  <button class="outline" id="exportBtn" style="width:100%;margin-top:8px">Exportar histórico CSV</button>
+</section>
+
+<section class="card">
+  <h2>Base de treinamento</h2>
+  <p class="muted">Importe um CSV para cadastrar TOs e pacotes. A base fica salva neste navegador.</p>
+  <label for="csvFile">Arquivo CSV</label><input id="csvFile" type="file" accept=".csv,text/csv">
+  <p class="muted">Formato: tipo,codigo,destino. Tipos: TO ou PACOTE. Para tratativas, use TRATATIVA na coluna tipo.</p>
+  <button class="secondary" id="downloadTemplate" style="width:100%">Baixar modelo CSV</button>
+  <div id="baseStatus" class="muted" style="margin-top:8px"></div>
+</section>
+<footer>Simulador independente para treinamento. Não conectado aos sistemas operacionais da Shopee.</footer>
+</main>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const screens=["screenName","screenArea","screenMenu","screenTO","screenScan","screenSummary"];
+function show(id){screens.forEach(s=>$(s).classList.toggle("hidden",s!==id));}
+let operator="", activeTO="", destination="", startedAt=0, scannerTO=null, scannerPKG=null;
+let counts={correct:0,treat:0,duplicate:0,error:0}, seen=new Set(), history=[];
+let db=JSON.parse(localStorage.getItem("pda_training_db")||"null")||{
+ tos:{"TO12345":"SP2","TO12346":"MG2","TO12347":"BA2"},
+ packages:{
+ "PKG0001":"SP2","PKG0002":"SP2","PKG0003":"MG2","PKG0004":"BA2",
+ "PKG0005":"SP2","PKG0006":"TRATATIVA","PKG0007":"SP2","PKG0008":"MG2",
+ "PKG0009":"TRATATIVA","PKG0010":"BA2"
+ }};
+function saveDB(){localStorage.setItem("pda_training_db",JSON.stringify(db));}
+function play(kind){
+ try{const ctx=new (window.AudioContext||window.webkitAudioContext)();let notes=kind==="ok"?[880]:[220,180,140];let t=ctx.currentTime;
+ notes.forEach((f,i)=>{let o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=f;o.type="sine";g.gain.setValueAtTime(.001,t+i*.18);g.gain.exponentialRampToValueAtTime(.16,t+i*.18+.02);g.gain.exponentialRampToValueAtTime(.001,t+i*.18+.14);o.connect(g);g.connect(ctx.destination);o.start(t+i*.18);o.stop(t+i*.18+.15);});setTimeout(()=>ctx.close(),1000);
+ }catch(e){}
+}
+function feedback(msg,type,confirm=false){
+ const box=$("feedback");box.innerHTML="";
+ const div=document.createElement("div");div.className="status "+type;div.textContent=msg;box.appendChild(div);
+ if(confirm){const b=document.createElement("button");b.id="confirmFeedback";b.className="primary";b.textContent="Confirmar";b.onclick=()=>{box.innerHTML="";};box.appendChild(b);}
+}
+function updateCounts(){
+ $("correctCount").textContent=counts.correct;$("treatCount").textContent=counts.treat;
+ $("duplicateCount").textContent=counts.duplicate;$("errorCount").textContent=counts.error;
+}
+async function stopScanner(which){
+ try{if(which==="TO"&&scannerTO){await scannerTO.stop();await scannerTO.clear();scannerTO=null;}
+ if(which==="PKG"&&scannerPKG){await scannerPKG.stop();await scannerPKG.clear();scannerPKG=null;}}catch(e){}
+}
+async function startScanner(which){
+ if(!window.Html5Qrcode){feedback("Leitor de QR Code não carregou. Verifique a conexão com a internet ou digite o código para testar.","error");return;}
+ const region=which==="TO"?"readerTO":"readerPKG";
+ const wrap=which==="TO"?"toScannerWrap":null;
+ if(wrap)$(wrap).classList.remove("hidden");
+ if(which==="PKG")$("stopPKGBtn").classList.remove("hidden");
+ const scanner=new Html5Qrcode(region);
+ if(which==="TO")scannerTO=scanner;else scannerPKG=scanner;
+ try{
+  await scanner.start({facingMode:"environment"},{fps:10,qrbox:{width:240,height:180}},async decoded=>{
+    await stopScanner(which);
+    if(which==="TO")handleTO(decoded);else handlePackage(decoded);
+  });
+ }catch(e){feedback("Não foi possível abrir a câmera. Autorize o acesso e confira se o endereço usa HTTPS.","error");}
+}
+function handleTO(raw){
+ const code=raw.trim();const dest=db.tos[code];
+ if(!dest){feedback("TO não cadastrada na base de treinamento.","error",true);return;}
+ activeTO=code;destination=dest;startedAt=Date.now();counts={correct:0,treat:0,duplicate:0,error:0};seen=new Set();updateCounts();
+ $("operatorLabel").textContent=operator;$("currentDestination").textContent=destination;
+ $("feedback").innerHTML="";show("screenScan");
+}
+function handlePackage(raw){
+ const code=raw.trim();const pkgDest=db.packages[code];
+ if(!pkgDest){counts.error++;updateCounts();play("error");feedback("QR não está cadastrado.","error",true);return;}
+ if(seen.has(code)){counts.duplicate++;updateCounts();play("error");feedback("Pacote duplicado. Este pacote já foi bipado nesta atividade.","error",true);return;}
+ if(pkgDest==="TRATATIVA"||pkgDest==="TRATATIVAS"){
+  seen.add(code);counts.treat++;updateCounts();play("ok");feedback("Pacote direcionado para tratativas.","warning");return;
+ }
+ if(pkgDest!==destination){counts.error++;updateCounts();play("error");feedback("Você não pode adicionar este pacote no destino de "+destination+" pois ele pertence a outro destino: "+pkgDest+".","error",true);return;}
+ seen.add(code);counts.correct++;updateCounts();play("ok");feedback("Pacote foi atribuído com sucesso.","success");
+}
+$("startBtn").onclick=()=>{operator=$("operator").value.trim();if(!operator){alert("Informe seu nome para continuar.");return;}show("screenArea");};
+$("processingBtn").onclick=()=>show("screenMenu");
+$("expeditionBtn").onclick=()=>show("screenTO");
+$("scanTOBtn").onclick=()=>startScanner("TO");
+$("stopTOBtn").onclick=async()=>{await stopScanner("TO");$("toScannerWrap").classList.add("hidden");};
+$("manualTOBtn").onclick=()=>handleTO($("manualTO").value);
+$("scanPackageBtn").onclick=()=>startScanner("PKG");
+$("stopPKGBtn").onclick=async()=>{await stopScanner("PKG");$("stopPKGBtn").classList.add("hidden");};
+$("manualPackageBtn").onclick=()=>{handlePackage($("manualPackage").value);$("manualPackage").value="";};
+$("finishBtn").onclick=async()=>{
+ await stopScanner("PKG");
+ const duration=Math.max(1,(Date.now()-startedAt)/60000), rate=Math.round((counts.correct+counts.treat)/(duration/60));
+ const record={date:new Date().toISOString(),operator,TO:activeTO,destination,correct:counts.correct,treat:counts.treat,duplicate:counts.duplicate,error:counts.error,minutes:+duration.toFixed(1),rate};
+ history.push(record);localStorage.setItem("pda_training_history",JSON.stringify(history));
+ $("summaryOperator").textContent=operator+" • "+activeTO+" • Destino "+destination;
+ $("sumCorrect").textContent=counts.correct;$("sumTreat").textContent=counts.treat;$("sumDuplicate").textContent=counts.duplicate;$("sumErrors").textContent=counts.error;
+ $("sumRate").textContent=rate+" pacotes/h";$("sumDuration").textContent="Tempo: "+duration.toFixed(1)+" min";
+ show("screenSummary");
+};
+$("newTOBtn").onclick=()=>{ $("manualTO").value="";show("screenTO");};
+$("restartBtn").onclick=()=>{operator="";$("operator").value="";show("screenName");};
+$("exportBtn").onclick=()=>{
+ const rows=[["data","colaborador","TO","destino","corretos","tratativas","duplicados","erros","tempo_min","pacotes_h"],...history.map(r=>[r.date,r.operator,r.TO,r.destination,r.correct,r.treat,r.duplicate,r.error,r.minutes,r.rate])];
+ const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(";")).join("\n");
+ download("historico_simulador_pda.csv",csv,"text/csv;charset=utf-8");
+};
+function download(name,content,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+content],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href);}
+$("downloadTemplate").onclick=()=>download("modelo_base_pda.csv","tipo,codigo,destino\nTO,TO12345,SP2\nTO,TO12346,MG2\nPACOTE,PKG0001,SP2\nPACOTE,PKG0002,MG2\nTRATATIVA,PKG0003,TRATATIVA\n","text/csv");
+$("csvFile").onchange=async e=>{
+ const file=e.target.files[0];if(!file)return;const text=await file.text();const lines=text.replace(/^\uFEFF/,"").split(/\r?\n/).filter(Boolean);let imported=0;
+ lines.slice(1).forEach(line=>{
+  const [type,code,dest]=line.split(/[;,]/).map(x=>x.trim().replace(/^"|"$/g,""));
+  if(!type||!code||!dest)return;
+  if(type.toUpperCase()==="TO")db.tos[code]=dest;else db.packages[code]=type.toUpperCase()==="TRATATIVA"?"TRATATIVA":dest;
+  imported++;
+ });
+ saveDB();$("baseStatus").textContent=imported+" registros importados. TOs: "+Object.keys(db.tos).length+" • Pacotes: "+Object.keys(db.packages).length;
+};
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body></html>
